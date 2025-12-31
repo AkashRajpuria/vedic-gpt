@@ -1,12 +1,4 @@
-from __future__ import annotations
-
-import argparse
-import os
-import inspect
-
-import torch
 from datasets import load_dataset
-
 
 def main() -> None:
     """
@@ -21,6 +13,13 @@ def main() -> None:
     p.add_argument("--val_file", type=str, default="data/chat_sft/val.jsonl")
     p.add_argument("--model", type=str, default="mistralai/Mistral-7B-Instruct-v0.3")
     p.add_argument("--output_dir", type=str, default="outputs/gita_mistral_qlora")
+    p.add_argument(
+        "--quant",
+        type=str,
+        default="4bit",
+        choices=["4bit", "none"],
+        help="4bit=QLoRA via bitsandbytes, none=LoRA in fp16 (recommended on Kaggle if bitsandbytes/triton breaks).",
+    )
     p.add_argument("--epochs", type=float, default=1.0)
     p.add_argument("--lr", type=float, default=2e-4)
     p.add_argument("--train_bs", type=int, default=1)
@@ -59,18 +58,22 @@ def main() -> None:
     # Helps avoid fragmentation OOMs on long runs.
     os.environ.setdefault("PYTORCH_CUDA_ALLOC_CONF", "expandable_segments:True")
 
-    from transformers import AutoTokenizer, BitsAndBytesConfig, AutoModelForCausalLM, TrainingArguments
+    from transformers import AutoTokenizer, AutoModelForCausalLM, TrainingArguments
     from peft import LoraConfig
     from trl import SFTTrainer
 
     ds = load_dataset("json", data_files={"train": args.train_file, "validation": args.val_file})
 
-    bnb_config = BitsAndBytesConfig(
-        load_in_4bit=True,
-        bnb_4bit_quant_type="nf4",
-        bnb_4bit_compute_dtype=torch.float16,
-        bnb_4bit_use_double_quant=True,
-    )
+    bnb_config = None
+    if args.quant == "4bit":
+        from transformers import BitsAndBytesConfig
+
+        bnb_config = BitsAndBytesConfig(
+            load_in_4bit=True,
+            bnb_4bit_quant_type="nf4",
+            bnb_4bit_compute_dtype=torch.float16,
+            bnb_4bit_use_double_quant=True,
+        )
 
     tokenizer = AutoTokenizer.from_pretrained(args.model, use_fast=True)
     if tokenizer.pad_token is None:
@@ -99,6 +102,7 @@ def main() -> None:
         target_modules=target_modules,
     )
 
+    optim = "paged_adamw_8bit" if args.quant == "4bit" else "adamw_torch"
     training_args = TrainingArguments(
         output_dir=args.output_dir,
         per_device_train_batch_size=args.train_bs,
@@ -114,7 +118,7 @@ def main() -> None:
         bf16=False,
         fp16=True,
         gradient_checkpointing=args.gradient_checkpointing,
-        optim="paged_adamw_8bit",
+        optim=optim,
         warmup_ratio=0.03,
         lr_scheduler_type="cosine",
         seed=args.seed,
@@ -156,5 +160,3 @@ if __name__ == "__main__":
     # Avoid tokenizer parallelism warnings in Colab
     os.environ.setdefault("TOKENIZERS_PARALLELISM", "false")
     main()
-
-

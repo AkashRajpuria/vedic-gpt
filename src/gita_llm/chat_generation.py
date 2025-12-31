@@ -120,7 +120,13 @@ def generate_chat(
     if is_adapter_dir:
         from peft import PeftModel
 
-        model = PeftModel.from_pretrained(model, model_name_or_path)
+        peft_kwargs = {}
+        if device_map is not None:
+            peft_kwargs["device_map"] = device_map
+        if offload_dir:
+            # accelerate uses "offload_folder" naming
+            peft_kwargs["offload_folder"] = offload_dir
+        model = PeftModel.from_pretrained(model, model_name_or_path, **peft_kwargs)
 
     device = "cuda" if torch.cuda.is_available() else "cpu"
     inputs = tokenizer(prompt, return_tensors="pt", truncation=True, max_length=2048).to(device)
@@ -150,4 +156,5 @@ def generate_chat(
             break
 
     return ChatAnswer(answer=text, closest_verse=closest)
+
 

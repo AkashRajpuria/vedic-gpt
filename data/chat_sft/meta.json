@@ -1,0 +1,8 @@
+{
+  "input": "data/gita_full.jsonl",
+  "seed": 7,
+  "verses_used": 700,
+  "examples_total": 2468,
+  "train": 2418,
+  "val": 50
+}

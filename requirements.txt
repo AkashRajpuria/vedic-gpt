@@ -1,0 +1,19 @@
+faiss-cpu==1.9.0.post1
+numpy==2.1.3
+pydantic==2.10.4
+sentence-transformers==3.3.1
+datasets==2.21.0
+accelerate==1.2.1
+sentencepiece==0.2.0
+evaluate==0.4.3
+nltk==3.9.1
+rouge-score==0.1.2
+absl-py==2.1.0
+# For QLoRA / larger instruct models (best results; typically run on Colab GPU):
+peft==0.14.0
+trl==0.13.0
+bitsandbytes==0.45.0
+torch==2.5.1
+transformers==4.47.1
+
+

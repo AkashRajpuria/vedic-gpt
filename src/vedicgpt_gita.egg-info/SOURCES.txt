@@ -1,0 +1,13 @@
+README.md
+pyproject.toml
+src/gita_llm/__init__.py
+src/gita_llm/ask.py
+src/gita_llm/build_index.py
+src/gita_llm/generation.py
+src/gita_llm/io.py
+src/gita_llm/retrieval.py
+src/gita_llm/schemas.py
+src/vedicgpt_gita.egg-info/PKG-INFO
+src/vedicgpt_gita.egg-info/SOURCES.txt
+src/vedicgpt_gita.egg-info/dependency_links.txt
+src/vedicgpt_gita.egg-info/top_level.txt
